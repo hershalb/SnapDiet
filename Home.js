@@ -14,6 +14,7 @@ import {
   TouchableHighlight
 } from 'react-native';
 
+import CameraExample from './CameraRoll';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import * as Progress from 'react-native-progress';
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
@@ -23,10 +24,10 @@ export default class Home extends Component {
     super(props);
 
     this.state = {
-      fill : 50,
+      fill : 0,
       barWidth: 200,
       goal: 0,
-
+      soFar: 0,
     }
   }
   componentWillMount() {
@@ -36,17 +37,39 @@ export default class Home extends Component {
       // Gets all user information. Should split into different functions.
       if (snapshot.val()) {
         console.log(snapshot.val());
+        if (snapshot.val().lastDay && snapshot.val().totalToday) {
+          var dateToCheck = new Date(snapshot.val().lastDay);
+          var actualDate = new Date(Date.now());
+          var isSameDay = (dateToCheck.getDate() == actualDate.getDate() 
+          && dateToCheck.getMonth() == actualDate.getMonth()
+          && dateToCheck.getFullYear() == actualDate.getFullYear())
+          if (isSameDay) {
+            this.setState({ soFar : snapshot.val().totalToday });
+          }
+        } else {
+          this.setState({ soFar : 0 });
+        }
         if (snapshot.val().goal) {
           this.setState({ goal : snapshot.val().goal });
         } else {
-          this.setState({ goal : {} });
+          this.setState({ goal : 0 });
         }
       } else {
-        this.setState({ goal : {} });
+        this.setState({ goal : 0 });
+        this.setState({ soFar : 0 });
       }
+      this.setState({ fill : Math.round(this.state.soFar / this.state.goal) });
     }.bind(this));
   }
+  goToCamera() {
+    this.props.navigator.push({
+      title: 'Camera Roll',
+      component: CameraExample,
+      passProps: {firebase: this.props.firebase, handleLogout: this.props.handleLogout}
+    });
+  }
   render() {
+    console.log(this.state);
     return (
       <View style={styles.container}>
         <View style={styles.circular}>
@@ -62,7 +85,7 @@ export default class Home extends Component {
               (fill) => (
                 <View style={styles.points}>
                   <Text style={styles.calories}>
-                    { Math.round(this.state.goal) }
+                    { Math.round(this.state.soFar) }
                   </Text>
                   <Text style={styles.info}>
                     calories snapped
@@ -84,7 +107,7 @@ export default class Home extends Component {
           <Text style={styles.foodG}>Vegetables</Text>
           <Progress.Bar progress={0.3} borderColor="white" color="#00e0ff" style={styles.bar} width={this.state.barWidth} />
         </View>
-        <TouchableHighlight style={{right: 0}}>
+        <TouchableHighlight style={{right: 0}} onPress={this.goToCamera.bind(this)}>
           <Icon name="plus-circle" size={30} color="black" />
         </TouchableHighlight>
       </View>

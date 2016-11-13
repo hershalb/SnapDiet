@@ -86,6 +86,8 @@ export default class Signup extends Component {
         updates['users/' + result.uid + '/email'] = this.state.email;
         updates['users/' + result.uid + '/bmr'] = bmr;
         updates['users/' + result.uid + '/goal'] = goal;
+        updates['users/' + result.uid + '/lastDay'] = 0;
+        updates['users/' + result.uid + '/totalToday'] = 0;
         // Updates image likes and notifications for artist and image.
         firebase.database().ref().update(updates);
       }.bind(this)).catch(function(error) {
