@@ -14,6 +14,19 @@ import {
 } from 'react-native';
 
 import Home from './Home';
+import Login from './Login';
+import Signup from './Signup';
+import * as firebase from 'firebase';
+
+// Initialize Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyCJO-tai7-CbFKIC0t2J5md0bcbTQqWw6Y",
+  authDomain: "snapdiet-4fa65.firebaseapp.com",
+  databaseURL: "https://snapdiet-4fa65.firebaseio.com",
+  storageBucket: "snapdiet-4fa65.appspot.com",
+  messagingSenderId: "316060951653"
+};
+const firebaseApp = firebase.initializeApp(firebaseConfig);
 
 export default class SnapDiet extends Component {
   render() {
@@ -21,8 +34,9 @@ export default class SnapDiet extends Component {
       <NavigatorIOS 
         style={styles.container}
         initialRoute={{
-          title: 'SnapDiet',
-          component: Home
+          title: 'Signup',
+          component: Signup,
+          passProps: {firebase : firebaseApp}
       }}/>
     );
   }
