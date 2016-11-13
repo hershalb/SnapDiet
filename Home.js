@@ -25,10 +25,26 @@ export default class Home extends Component {
     this.state = {
       fill : 50,
       barWidth: 200,
+      goal: 0,
+
     }
   }
   componentWillMount() {
-    this.setState({barWidth: (Dimensions.get('window').width - 100) });
+    var firebase = this.props.firebase;
+    this.setState({barWidth: (Dimensions.get('window').width - 100), uid : this.props.uid });
+    firebase.database().ref('users/' + this.props.uid).on('value', function(snapshot) {
+      // Gets all user information. Should split into different functions.
+      if (snapshot.val()) {
+        console.log(snapshot.val());
+        if (snapshot.val().goal) {
+          this.setState({ goal : snapshot.val().goal });
+        } else {
+          this.setState({ goal : {} });
+        }
+      } else {
+        this.setState({ goal : {} });
+      }
+    }.bind(this));
   }
   render() {
     return (
@@ -46,7 +62,7 @@ export default class Home extends Component {
               (fill) => (
                 <View style={styles.points}>
                   <Text style={styles.calories}>
-                    { 1000 }
+                    { Math.round(this.state.goal) }
                   </Text>
                   <Text style={styles.info}>
                     calories snapped

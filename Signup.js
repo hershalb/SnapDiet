@@ -12,7 +12,10 @@ import {
   View,
   Dimensions,
   TextInput,
-  TouchableHighlight
+  TouchableHighlight,
+  AsyncStorage,
+  Slider,
+  SegmentedControlIOS,
 } from 'react-native';
 
 import Home from './Home';
@@ -29,10 +32,23 @@ export default class Signup extends Component {
       password: '',
       username: '',
       errorMessage: '',
+      weight: 0,
+      height: 0,
+      excercise: 1.2,
+      gender: 0,
+      age: 0,
+      goal : 0,
     }
   }
   signup(){
+    console.log(this.props);
     var firebase = this.props.firebase;
+    if (!this.state.email || !this.state.password ||
+        !this.state.username || this.state.weight === 0 ||
+        this.state.height === 0 || this.state.age === 0) {
+      this.setState({errorMessage : "Make sure to fill out all fields"});
+      return;
+    }
     this.setState({
       loaded: false
     });
@@ -41,21 +57,73 @@ export default class Signup extends Component {
     // Creates new user.
     firebase.auth().createUserWithEmailAndPassword(email, password).then(function(result) {
       result.updateProfile({
-        username: this.state.username
+        displayName: this.state.username
       }).then(function() {
-        this.props.navigator.push({
-          title: 'Post',
-          component: Home
+        console.log(this);
+        AsyncStorage.setItem('snapdiet', JSON.stringify(result));
+        this.props.navigator.replace({
+          title: 'SnapDiet',
+          component: Home,
+          passProps: {firebase : firebase, uid : result.uid},
+          rightButtonTitle: 'Logout',
+          onRightButtonPress: () => this.props.handleLogout(),
         });
+      }.bind(this)).then(function() {
+        var updates = {};
+        var bmr;
+        if (this.state.gender) {
+          bmr = 66.47 + (13.75 * this.state.weight) + (5.0 * this.state.height) - (6.75 * this.state.age);
+        } else {
+          bmr = 665.09 + (9.56 * this.state.weight) + (1.84 * this.state.height) - (4.67 * this.state.age);
+        }
+        var goal = (this.state.goal ? 500 : -500) + (bmr * this.state.excercise);
+        updates['users/' + result.uid + '/name'] = this.state.username;
+        updates['users/' + result.uid + '/age'] = this.state.age;
+        updates['users/' + result.uid + '/gender'] = this.state.gender ? "Female" : "Male";
+        updates['users/' + result.uid + '/height'] = this.state.height;
+        updates['users/' + result.uid + '/weight'] = this.state.weight;
+        updates['users/' + result.uid + '/excercise'] = this.state.excercise;
+        updates['users/' + result.uid + '/email'] = this.state.email;
+        updates['users/' + result.uid + '/bmr'] = bmr;
+        updates['users/' + result.uid + '/goal'] = goal;
+        // Updates image likes and notifications for artist and image.
+        firebase.database().ref().update(updates);
       }.bind(this)).catch(function(error) {
-        this.setState({ errorMessage : error.message });
-      });
+          console.log(error);
+      }.bind(this));
     }.bind(this)).catch(function(error) {
       this.setState({ errorMessage : error.message });
     }.bind(this));
   }
+  onUsernameChange(event) {
+    this.setState({username: event.nativeEvent.text});
+  }
+  onEmailChange(event) {
+    this.setState({email: event.nativeEvent.text});
+  }
+  onPasswordChange(event) {
+    this.setState({password: event.nativeEvent.text});
+  }
+  onHeightChange(event) {
+    this.setState({height: event.nativeEvent.text});
+  }
+  onWeightChange(event) {
+    this.setState({weight: event.nativeEvent.text});
+  }
+  onExcerciseChange(num) {
+    var val = 1.2 + (num * 5 * .175);
+    this.setState({excercise: val});
+  }
+  onGenderChange(event) {
+    this.setState({gender : event.nativeEvent.selectedSegmentIndex});
+  }
+  onAgeChange(event) {
+    this.setState({age : event.nativeEvent.text});
+  }
+  onGoalChange(event) {
+    this.setState({age : event.nativeEvent.text});
+  }
   render() {
-    console.log(this.props);
     return (
       <View style={styles.container}>
         <View style={styles.flow}>
@@ -63,18 +131,50 @@ export default class Signup extends Component {
             autoCapitalize="none" 
             style={styles.input} 
             placeholder="Username"
-            onChange={(event) => this.setState({username: event.nativeEvent.text})}
+            onChange={this.onUsernameChange.bind(this)}
+          />
+          <TextInput 
+            autoCapitalize="none" 
+            style={styles.input} 
+            placeholder="Age"
+            keyboardType="numeric"
+            onChange={this.onAgeChange.bind(this)}
+          />
+          <SegmentedControlIOS
+            tintColor="#ff0000"
+            values={['Male', 'Female']}
+            selectedIndex={this.state.gender}
+            onChange={this.onGenderChange.bind(this)}
+          />
+          <TextInput 
+            autoCapitalize="none" 
+            style={styles.input} 
+            keyboardType="numeric"
+            placeholder="Weight in lbs."
+            onChange={this.onWeightChange.bind(this)}
+          />
+          <TextInput 
+            autoCapitalize="none" 
+            style={styles.input} 
+            placeholder="Height in cm."
+            keyboardType="numeric"
+            onChange={this.onHeightChange.bind(this)}
             />
-          <TextInput autoCapitalize="none" style={styles.input} placeholder="Weight"/>
-          <TextInput autoCapitalize="none" style={styles.input} placeholder="Height"/>
-          <TextInput autoCapitalize="none" style={styles.input} placeholder="Excerise"/>
+          <Text>Excercise Level</Text>
+          <Slider minimum={1.2} maximum={1.9} step={0.2} onSlidingComplete={this.onExcerciseChange.bind(this)}/>
+          <SegmentedControlIOS
+            tintColor="#00ff00"
+            values={['Lose weight', 'Gain weight']}
+            selectedIndex={this.state.goal}
+            onChange={this.onGoalChange.bind(this)}
+          />
           <TextInput 
             autoCapitalize="none" 
             value={this.state.email} 
             keyboardType="email-address" 
             style={styles.input} 
             placeholder="Email"
-            onChange={(event) => this.setState({email: event.nativeEvent.text})}
+            onChange={this.onEmailChange.bind(this)}
             />
           <TextInput 
             autoCapitalize="none" 
@@ -82,7 +182,7 @@ export default class Signup extends Component {
             secureTextEntry={true} 
             style={styles.input} 
             placeholder="Password"
-            onChange={(event) => this.setState({password: event.nativeEvent.text})}
+            onChange={this.onPasswordChange.bind(this)}
             />
           <TouchableHighlight onPress={this.signup.bind(this)} style={styles.button}>
             <Text style={styles.buttonText}>

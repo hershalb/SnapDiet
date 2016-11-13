@@ -10,7 +10,8 @@ import {
   StyleSheet,
   Text,
   NavigatorIOS,
-  View
+  View,
+  AsyncStorage
 } from 'react-native';
 
 import Home from './Home';
@@ -29,15 +30,52 @@ const firebaseConfig = {
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 
 export default class SnapDiet extends Component {
+  constructor() {
+    super();
+
+    this.state = {
+      home : false,
+      loaded : false,
+      uid: '',
+    }
+
+    this.handleLogout = this.handleLogout.bind(this);
+  }
+  componentWillMount() {
+    AsyncStorage.getItem('snapdiet').then((json) => {
+      var home = false;
+      var uid = '';
+      if (json) {
+        uid = JSON.parse(json)['uid'];
+        home = true;
+      }
+      this.setState({ loaded : true, home : home, uid : uid });
+    });
+  }
+  handleLogout() {
+    this.setState({ loaded : false });
+    AsyncStorage.removeItem('snapdiet').then(()=> {
+      firebaseApp.auth().signOut().then(function() {
+        this.setState({loaded: true, home : false });
+      }.bind(this), function(error) {
+        this.setState({loaded: true });
+        console.log(error);
+      }.bind(this));
+    });
+  }
   render() {
     return (
-      <NavigatorIOS 
-        style={styles.container}
-        initialRoute={{
-          title: 'Signup',
-          component: Signup,
-          passProps: {firebase : firebaseApp}
-      }}/>
+      this.state.loaded ?
+        <NavigatorIOS 
+          style={styles.container}
+          initialRoute={{
+            title: this.state.home ? 'SnapDiet' : 'Login',
+            component: this.state.home ? Home : Login,
+            passProps: {firebase : firebaseApp, handleLogout: this.handleLogout, uid : this.state.uid},
+            rightButtonTitle: this.state.home ? 'Logout' : '',
+            onRightButtonPress: () => this.handleLogout(),
+        }}/> :
+      null
     );
   }
 }
