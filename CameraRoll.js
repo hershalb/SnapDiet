@@ -6,7 +6,16 @@ import {
   View
 } from 'react-native';
 
+// import VisualRecognitionV3 from 'watson-developer-cloud/visual-recognition/v3';
+var VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v3');
+import RNFS from 'react-native-fs';
 import CameraRollPicker from 'react-native-camera-roll-picker';
+
+var visual_recognition = new VisualRecognitionV3({
+  api_key: '<api_key>',
+  version_date: '2016-05-19'
+});
+
 
 export default class Example extends Component {
   constructor(props) {

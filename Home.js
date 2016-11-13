@@ -14,7 +14,7 @@ import {
   TouchableHighlight
 } from 'react-native';
 
-import CameraExample from './CameraRoll';
+import Example from './CameraRoll';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import * as Progress from 'react-native-progress';
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
@@ -64,7 +64,7 @@ export default class Home extends Component {
   goToCamera() {
     this.props.navigator.push({
       title: 'Camera Roll',
-      component: CameraExample,
+      component: Example,
       passProps: {firebase: this.props.firebase, handleLogout: this.props.handleLogout}
     });
   }
